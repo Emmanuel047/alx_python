@@ -1,50 +1,35 @@
-#!/usr/bin/python3
 import csv
 import requests
 import sys
 
+def employees_todo_list(employee_id):
+    # Construct the API endpoints based on the provided employee_id
+    todos_url = "https://jsonplaceholder.typicode.com/users/{}/todos".format(employee_id)
+    user_url = "https://jsonplaceholder.typicode.com/users/{}".format(employee_id)
 
-def get_employee_data(employee_id):
-    # Define the API endpoints
-    user_url = f"https://jsonplaceholder.typicode.com/users/{employee_id}"
-    todos_url = f"https://jsonplaceholder.typicode.com/users/{employee_id}/todos"
+    # Make API requests
+    todos_response = requests.get(todos_url)
+    user_response = requests.get(user_url)
 
-    try:
-        # Fetch employee data
-        user_response = requests.get(user_url)
-        user_data = user_response.json()
-        user_id = user_data.get('id')
-        username = user_data.get('username')
+    todos_data = todos_response.json()
+    user_data = user_response.json()
 
-        # Fetch TODO list data
-        todos_response = requests.get(todos_url)
-        todos_data = todos_response.json()
+    employee_name = user_data.get("username")
 
-        # Create a CSV file for the employee
-        csv_filename = f"{user_id}.csv"
-        with open(csv_filename, 'w', newline='') as csv_file:
-            csv_writer = csv.writer(csv_file)
+    alltask_record = []
 
-            # Write header row
-            csv_writer.writerow(
-                ["USER_ID", "USERNAME", "TASK_COMPLETED_STATUS", "TASK_TITLE"])
+    for todo_data in todos_data:
+        alltask_record.append([
+            employee_id,
+            employee_name,
+            todo_data["completed"],
+            todo_data["title"],
+        ])
 
-            # Write task data to the CSV
-            for task in todos_data:
-                csv_writer.writerow(
-                    [user_id, username, task["completed"], task["title"]])
+    with open(str(employee_id) + ".csv", "w", encoding="UTF8", newline="") as f:
+        writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+        writer.writerows(alltask_record)
 
-        print(f"Data exported to {csv_filename}")
-
-    except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python script.py <employee_id>")
-        sys.exit(1)
-
-employee_id = int(sys.argv[1])
-get_employee_data(1)
+if __name__ == "__main":
+    employee_id = int(sys.argv[1])
+    employees_todo_list(employee_id)
